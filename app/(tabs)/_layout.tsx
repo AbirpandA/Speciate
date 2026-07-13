@@ -51,6 +51,19 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="journal"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name="book-outline"
+              size={24}
+              color={focused ? Colors.white : Colors.mediumGray}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="analytics"
         options={{
           tabBarIcon: ({ focused }) => (

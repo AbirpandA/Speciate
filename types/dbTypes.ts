@@ -69,3 +69,11 @@ export type Goal = {
   created_at: string;
   order: number;
 };
+
+export type JournalEntry = {
+  id: number;
+  date: string; // YYYY-MM-DD
+  content: string;
+  created_at: string;
+  updated_at?: string | null;
+};

@@ -24,8 +24,10 @@ export const BackupService = {
       
       const jsonStr = JSON.stringify(backupData, null, 2);
       
+      // @ts-ignore
       const fileUri = FileSystem.documentDirectory + "habit-tracker-backup.json";
       await FileSystem.writeAsStringAsync(fileUri, jsonStr, {
+        // @ts-ignore
         encoding: FileSystem.EncodingType.UTF8,
       });
       
@@ -61,6 +63,7 @@ export const BackupService = {
 
       const fileUri = result.assets[0].uri;
       const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+        // @ts-ignore
         encoding: FileSystem.EncodingType.UTF8,
       });
 

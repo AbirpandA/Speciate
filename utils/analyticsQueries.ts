@@ -14,7 +14,7 @@ export async function getWeeklyCompletionData(db: SQLiteDatabase): Promise<Chart
   // Generate the last 7 days including today
   for (let i = 6; i >= 0; i--) {
     const d = today.minus({ days: i });
-    const dateStr = d.toISODate();
+    const dateStr = d.toFormat('yyyy-MM-dd');
     
     // SQLite can get count of completed entries for this date
     try {

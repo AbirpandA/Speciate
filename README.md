@@ -1,11 +1,11 @@
-#  Atomic Habit Tracker
+# Speciate (Version 2)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React Native](https://img.shields.io/badge/React_Native-20232A?style=flat&logo=react&logoColor=61DAFB)
 ![Expo](https://img.shields.io/badge/Expo-000020?style=flat&logo=expo&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
 
-A beautifully minimal, incredibly fast, and 100% offline open-source habit tracker built with React Native and Expo. 
+A beautifully minimal, incredibly fast, and 100% offline open-source habit, goal, and daily journal tracker built with React Native and Expo. 
 
 Small steps every day lead to big changes. This app is designed to get out of your way and help you build consistency without subscriptions, cloud sync issues, or clutter.
 
@@ -15,37 +15,40 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 
 ---
 
-##  Features
+## 🔥 New in Version 2
+- **🎯 Goals System**: Set, track, and crush your Weekly, Monthly, and Long-Term goals!
+- **📔 Daily Journal**: A dedicated space to reflect on "What did I learn today?" featuring a seamless, zero-distraction Auto-Save engine and an endless timeline of your past learnings.
+- **🚀 Ultra-Optimized**: Fully rewritten rendering engine powered by `@shopify/flash-list` for a locked 60fps experience, even with thousands of habits and journal entries.
 
-- ** Offline First**: Uses robust local SQLite storage. Your data never leaves your device.
-- **⚡ Blazing Fast**: Optimized with `@shopify/flash-list` for a locked 60fps experience, even with hundreds of habits.
-- ** Streaks & Gamification**: Automatically calculates your Current and Longest streaks to keep you motivated.
-- ** Advanced Analytics**: Custom built SVG line charts to visualize your 7-day completion trends.
-- ** Backup & Restore**: Full JSON export and import capabilities so you can safely backup your data to Google Drive or iCloud.
-- ** Satisfying UX**: Premium haptics and spring animations using `react-native-reanimated` make checking off habits incredibly rewarding.
-- ** True Dark Mode**: A deep, OLED-friendly dark theme that is easy on the eyes.
+## ✨ Core Features
+- **🔒 Offline First**: Uses robust local SQLite storage. Your data never leaves your device.
+- **🔥 Streaks & Gamification**: Automatically calculates your Current and Longest streaks to keep you motivated.
+- **📊 Advanced Analytics**: Custom built SVG line charts to visualize your 7-day completion trends.
+- **💾 Backup & Restore**: Full JSON export and import capabilities so you can safely backup your data to Google Drive or iCloud.
+- **🤌 Satisfying UX**: Premium haptics and spring animations using `react-native-reanimated` make checking off habits incredibly rewarding.
+- **🌙 True Dark Mode**: A deep, OLED-friendly dark theme that is easy on the eyes.
 
 ---
 
-##  Tech Stack
+## 🛠 Tech Stack
 
-- **Framework**: React Native & Expo
+- **Framework**: React Native & Expo (SDK 54)
 - **Language**: TypeScript
 - **Database**: `expo-sqlite`
 - **Animations**: `react-native-reanimated`
-- **Charts**: `react-native-svg`
+- **Lists**: `@shopify/flash-list`
 - **Testing**: Jest & React Native Testing Library
 
 ---
 
-##  Getting Started (Local Development)
+## 🚀 Getting Started (Local Development)
 
 To run this project locally on your machine:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/open-source-habit-tracker-app.git
-   cd open-source-habit-tracker-app
+   git clone https://github.com/AbirpandA/Speciate.git
+   cd Speciate
    ```
 
 2. **Install dependencies**
@@ -64,7 +67,7 @@ To run this project locally on your machine:
 
 ---
 
-##  Creating a Production Release (APK / IPA)
+## 📦 Creating a Production Release (APK / IPA)
 
 Since this app uses native modules, if you want to install the standalone app on your phone (without Expo Go), you can use EAS Build:
 
@@ -84,9 +87,9 @@ Since this app uses native modules, if you want to install the standalone app on
 
 ---
 
-##  Contributing
+## 🤝 Contributing
 
-Contributions, issues, and feature requests are always welcome! Feel free to check the [issues page](https://github.com/yourusername/open-source-habit-tracker-app/issues).
+Contributions, issues, and feature requests are always welcome! Feel free to check the issues page.
 
 ---
 

@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from "expo-sqlite";
 import { INIT_SQL } from "./migrations/001_init";
 
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
-  const DATABASE_VERSION = 2;
+  const DATABASE_VERSION = 3;
 
   // Get current database version
   const result = await db.getFirstAsync<{ user_version: number }>(
@@ -33,6 +33,13 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
     const { MIGRATION_002_SQL } = await import('./migrations/002_goals');
     await db.execAsync(MIGRATION_002_SQL);
     currentDbVersion = 2;
+  }
+
+  // Migration 003: Add Daily Journal
+  if (currentDbVersion === 2) {
+    const { MIGRATION_003_SQL } = await import('./migrations/003_journal');
+    await db.execAsync(MIGRATION_003_SQL);
+    currentDbVersion = 3;
   }
 
   // Update database version
