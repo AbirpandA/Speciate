@@ -1,4 +1,4 @@
-# 🚀 Atomic Habit Tracker
+#  Atomic Habit Tracker
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React Native](https://img.shields.io/badge/React_Native-20232A?style=flat&logo=react&logoColor=61DAFB)
@@ -15,19 +15,19 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 
 ---
 
-## ✨ Features
+##  Features
 
-- **📱 Offline First**: Uses robust local SQLite storage. Your data never leaves your device.
+- ** Offline First**: Uses robust local SQLite storage. Your data never leaves your device.
 - **⚡ Blazing Fast**: Optimized with `@shopify/flash-list` for a locked 60fps experience, even with hundreds of habits.
-- **🔥 Streaks & Gamification**: Automatically calculates your Current and Longest streaks to keep you motivated.
-- **📈 Advanced Analytics**: Custom built SVG line charts to visualize your 7-day completion trends.
-- **💾 Backup & Restore**: Full JSON export and import capabilities so you can safely backup your data to Google Drive or iCloud.
-- **✨ Satisfying UX**: Premium haptics and spring animations using `react-native-reanimated` make checking off habits incredibly rewarding.
-- **🌙 True Dark Mode**: A deep, OLED-friendly dark theme that is easy on the eyes.
+- ** Streaks & Gamification**: Automatically calculates your Current and Longest streaks to keep you motivated.
+- ** Advanced Analytics**: Custom built SVG line charts to visualize your 7-day completion trends.
+- ** Backup & Restore**: Full JSON export and import capabilities so you can safely backup your data to Google Drive or iCloud.
+- ** Satisfying UX**: Premium haptics and spring animations using `react-native-reanimated` make checking off habits incredibly rewarding.
+- ** True Dark Mode**: A deep, OLED-friendly dark theme that is easy on the eyes.
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Framework**: React Native & Expo
 - **Language**: TypeScript
@@ -38,7 +38,7 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 
 ---
 
-## 🚀 Getting Started (Local Development)
+##  Getting Started (Local Development)
 
 To run this project locally on your machine:
 
@@ -64,7 +64,7 @@ To run this project locally on your machine:
 
 ---
 
-## 📦 Creating a Production Release (APK / IPA)
+##  Creating a Production Release (APK / IPA)
 
 Since this app uses native modules, if you want to install the standalone app on your phone (without Expo Go), you can use EAS Build:
 
@@ -84,7 +84,7 @@ Since this app uses native modules, if you want to install the standalone app on
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions, issues, and feature requests are always welcome! Feel free to check the [issues page](https://github.com/yourusername/open-source-habit-tracker-app/issues).
 
@@ -94,6 +94,6 @@ Contributions, issues, and feature requests are always welcome! Feel free to che
 
 If you’re interested in customizing this app for your product, startup, or building an app from scratch, you can reach out at:
 
-📧 **hasibhaque07@gmail.com**
+📧 **<abirpanda335@gmail.com>**
 
 I’m open to collaborations and long-term projects.

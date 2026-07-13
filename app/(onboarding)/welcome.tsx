@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
               entering={FadeInDown.delay(300).springify()}
               className="text-white text-4xl font-bold text-center mb-3 leading-snug"
             >
-              Welcome to{"\n"}Habit Tracker
+              Welcome to{"\n"}Speciate
             </Animated.Text>
 
             {/* Subtitle */}

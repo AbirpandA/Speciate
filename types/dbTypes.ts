@@ -59,3 +59,13 @@ export type SubscriptionHistory = {
   end_date?: string | null;
   created_at: string;
 };
+
+export type Goal = {
+  id: number;
+  title: string;
+  timeframe: "weekly" | "monthly" | "long_term";
+  status: number; // 0 = active, 1 = completed
+  deadline?: string | null;
+  created_at: string;
+  order: number;
+};

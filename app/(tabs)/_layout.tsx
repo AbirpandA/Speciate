@@ -16,7 +16,7 @@ export default function TabLayout() {
           borderColor: Colors.white,
           position: "absolute",
           bottom: 20 + insets.bottom,
-          marginHorizontal: 70,
+          marginHorizontal: 40,
           borderRadius: 40,
           paddingTop: 5,
         },
@@ -31,6 +31,19 @@ export default function TabLayout() {
             <Ionicons
               name="home-outline"
               size={26}
+              color={focused ? Colors.white : Colors.mediumGray}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="goals"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name="flag-outline"
+              size={24}
               color={focused ? Colors.white : Colors.mediumGray}
             />
           ),

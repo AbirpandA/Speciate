@@ -2,7 +2,7 @@ import "@/global.css";
 import { useAuthStore } from "@/services/authStorage";
 import { migrateDbIfNeeded } from "@/services/db";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useEffect } from "react";
 import { StatusBar } from "react-native";
@@ -18,6 +18,26 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [_hasHydrated]);
+
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    
+    const inOnboardingGroup = segments[0] === '(onboarding)';
+
+    if (!hasCompletedOnboarding && !inOnboardingGroup) {
+      // Small timeout ensures the router is fully mounted in the standalone build
+      setTimeout(() => {
+        router.replace("/(onboarding)/welcome");
+      }, 1);
+    } else if (hasCompletedOnboarding && inOnboardingGroup) {
+      setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 1);
+    }
+  }, [_hasHydrated, hasCompletedOnboarding, segments]);
 
   if (!_hasHydrated) {
     return null;
@@ -42,16 +62,22 @@ export default function RootLayout() {
               //animation: "none",
             }}
           >
-            <Stack.Protected guard={!hasCompletedOnboarding}>
-              <Stack.Screen
-                name="(onboarding)"
-                options={{ headerShown: false }}
-              />
-            </Stack.Protected>
+            <Stack.Screen
+              name="(onboarding)"
+              options={{ headerShown: false }}
+            />
 
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="newHabit"
+              options={{
+                headerShown: false,
+                presentation: "transparentModal",
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="newGoal"
               options={{
                 headerShown: false,
                 presentation: "transparentModal",

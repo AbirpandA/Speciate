@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from "expo-sqlite";
 import { INIT_SQL } from "./migrations/001_init";
 
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
-  const DATABASE_VERSION = 1;
+  const DATABASE_VERSION = 2;
 
   // Get current database version
   const result = await db.getFirstAsync<{ user_version: number }>(
@@ -25,15 +25,15 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
     // Execute the initial schema from imported SQL
     await db.execAsync(INIT_SQL);
 
-    currentDbVersion = DATABASE_VERSION;
+    currentDbVersion = 1;
   }
 
-  // Future migrations can be added here:
-  // if (currentDbVersion === 1) {
-  //   const { INIT_SQL: MIGRATION_002_SQL } = await import('./migrations/002_add_feature');
-  //   await db.execAsync(MIGRATION_002_SQL);
-  //   currentDbVersion = 2;
-  // }
+  // Migration 002: Add Goals
+  if (currentDbVersion === 1) {
+    const { MIGRATION_002_SQL } = await import('./migrations/002_goals');
+    await db.execAsync(MIGRATION_002_SQL);
+    currentDbVersion = 2;
+  }
 
   // Update database version
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
