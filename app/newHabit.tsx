@@ -7,6 +7,7 @@ import Stepper from "@/components/ui/Stepper";
 import { useHabits } from "@/hooks/useHabits";
 import type { Habit, HabitType, TimeOfDay } from "@/types/dbTypes";
 import { habitColors } from "@/utils/habitColors";
+import { BUILD_TEMPLATES, HabitTemplate, QUIT_TEMPLATES } from "@/utils/habitTemplates";
 import { parseScheduleDays, TIME_OF_DAY_META, TIME_OF_DAY_ORDER, WEEKDAY_LABELS } from "@/utils/schedule";
 import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -94,6 +95,28 @@ function HabitForm({ existing, initialType }: { existing?: Habit; initialType: H
   );
   const [iconModal, setIconModal] = useState(false);
 
+  const applyTemplate = (t: HabitTemplate) => {
+    Haptics.selectionAsync();
+    setName(t.name);
+    setIcon(t.icon);
+    setColor(t.color);
+    setCue(t.cue ?? "");
+    if (t.type === "build") {
+      setTimeOfDay(t.time_of_day ?? "anytime");
+      setTarget(t.target ?? 1);
+      setUnit(t.unit ?? "");
+      if (t.times_per_week) {
+        setMode("weekly");
+        setTimesPerWeek(t.times_per_week);
+      } else if (t.schedule_days) {
+        setMode("days");
+        setDays(t.schedule_days);
+      } else {
+        setMode("daily");
+      }
+    }
+  };
+
   const isQuit = type === "quit";
   const accent = isQuit ? theme.quit : theme.accent;
   const canSave = name.trim().length > 0 && (mode !== "days" || days.length > 0 || isQuit);
@@ -155,6 +178,37 @@ function HabitForm({ existing, initialType }: { existing?: Habit; initialType: H
             </View>
           )}
 
+          {!isEdit && (
+            <View className="mb-5 -mx-5">
+              <Text className="text-muted text-xs font-semibold uppercase tracking-wider mb-2 px-5">
+                Start from a template
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {(isQuit ? QUIT_TEMPLATES : BUILD_TEMPLATES).map((t) => (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => applyTemplate(t)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Use template ${t.name}`}
+                    className="flex-row items-center px-3 py-2 mr-2 rounded-full border"
+                    style={{
+                      borderColor: name === t.name ? t.color : theme.border,
+                      backgroundColor: name === t.name ? t.color + "1A" : theme.surface,
+                    }}
+                  >
+                    <Ionicons name={t.icon as any} size={15} color={t.color} />
+                    <Text className="text-white text-sm ml-1.5">{t.name}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Identity: icon + name */}
           <View className="flex-row items-center mb-4">
             <Pressable
@@ -171,7 +225,7 @@ function HabitForm({ existing, initialType }: { existing?: Habit; initialType: H
                 value={name}
                 onChangeText={setName}
                 placeholder={isQuit ? "e.g. Doomscrolling" : "e.g. Read 10 pages"}
-                autoFocus={!isEdit}
+                autoFocus={false}
                 returnKeyType="done"
                 maxLength={60}
               />

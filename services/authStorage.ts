@@ -13,6 +13,9 @@ export type CelebratedMilestones = Record<string, { since: string; days: number 
 type UserState = {
   hasCompletedOnboarding: boolean;
   celebrated: CelebratedMilestones;
+  /** Monday (YYYY-MM-DD) of the last week whose review was completed/dismissed */
+  reviewedWeek: string | null;
+  setReviewedWeek: (weekStart: string) => void;
   markCelebrated: (habitId: number, since: string, days: number) => void;
   profile: Profile;
   setProfile: (profile: Partial<Profile>) => void;
@@ -28,6 +31,8 @@ export const useAuthStore = create(
       hasCompletedOnboarding: false,
       profile: { name: "", focusAreas: [] },
       celebrated: {},
+      reviewedWeek: null,
+      setReviewedWeek: (weekStart) => set({ reviewedWeek: weekStart }),
       markCelebrated: (habitId, since, days) =>
         set((state) => ({ celebrated: { ...state.celebrated, [habitId]: { since, days } } })),
       _hasHydrated: false,

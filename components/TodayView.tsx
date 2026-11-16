@@ -6,6 +6,9 @@ import HabitCard from "@/components/today/HabitCard";
 import QuickActionsSheet from "@/components/today/QuickActionsSheet";
 import QuitCard from "@/components/today/QuitCard";
 import WeekStrip from "@/components/today/WeekStrip";
+import WeeklyReviewCard from "@/components/today/WeeklyReviewCard";
+import { useJournal } from "@/hooks/useJournal";
+import { useWeeklyReview } from "@/hooks/useWeeklyReview";
 import { DayHabit, useDayHabits, useWeekProgress } from "@/hooks/useDayHabits";
 import { QuitHabit, useQuitHabits } from "@/hooks/useQuitHabits";
 import { useSetHabitEntry } from "@/hooks/useToggle";
@@ -41,6 +44,13 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const [celebration, setCelebration] = useState<CelebrationMessage | null>(null);
   const celebrated = useAuthStore((s) => s.celebrated);
   const markCelebrated = useAuthStore((s) => s.markCelebrated);
+  const reviewedWeek = useAuthStore((s) => s.reviewedWeek);
+  const setReviewedWeek = useAuthStore((s) => s.setReviewedWeek);
+  const { saveEntry } = useJournal();
+  // Review last week until done or dismissed (any day this week).
+  const lastWeekStart = DateTime.local().startOf("week").minus({ weeks: 1 }).toFormat("yyyy-MM-dd");
+  const reviewDue = reviewedWeek !== lastWeekStart;
+  const { data: review } = useWeeklyReview(reviewDue);
 
   const { data: habits = [], isLoading } = useDayHabits(selected);
   const { data: week = [] } = useWeekProgress(selected);
@@ -174,6 +184,17 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
                 total={total}
                 line={line}
                 label={isToday ? "Today" : selectedDt.toFormat("cccc, d LLL")}
+              />
+            )}
+
+            {isToday && reviewDue && review && review.rate != null && (
+              <WeeklyReviewCard
+                review={review}
+                onDismiss={() => setReviewedWeek(lastWeekStart)}
+                onSave={async (text) => {
+                  await saveEntry({ date: today, append: `Weekly review: ${text}` });
+                  setReviewedWeek(lastWeekStart);
+                }}
               />
             )}
 

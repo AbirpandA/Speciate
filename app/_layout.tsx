@@ -41,7 +41,7 @@ export default function RootLayout() {
         router.replace("/(tabs)");
       }, 1);
     }
-  }, [_hasHydrated, hasCompletedOnboarding, segments]);
+  }, [_hasHydrated, hasCompletedOnboarding, segments, router]);
 
   if (!_hasHydrated) {
     return null;
