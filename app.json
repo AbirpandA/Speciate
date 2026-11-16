@@ -6,13 +6,19 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "habittracker",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.abirp.habittracker"
+      "package": "com.abirp.habittracker",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#141414"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -25,11 +31,11 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#0F0F10",
           "dark": {
-            "backgroundColor": "#ffffff"
+            "backgroundColor": "#0F0F10"
           }
         }
       ],
