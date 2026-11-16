@@ -14,16 +14,17 @@ const AnalyticsScreen = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchData();
-    }, [])
+      let active = true;
+      getWeeklyCompletionData(db).then((chartData) => {
+        if (!active) return;
+        setData(chartData);
+        setIsLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }, [db])
   );
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    const chartData = await getWeeklyCompletionData(db);
-    setData(chartData);
-    setIsLoading(false);
-  };
 
   if (isLoading) {
     return (

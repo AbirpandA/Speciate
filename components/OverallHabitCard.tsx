@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Canvas, Rect as SkRect } from "@shopify/react-native-skia";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import type { ScrollViewInstance } from "react-native";
 import {
   Pressable,
   ScrollView,
@@ -62,7 +63,7 @@ export default function OverallHabitCard({
   const width = Math.max(1, habit.entries.length) * CELL_STRIDE - CELL_GAP;
   const height = DAYS * CELL_STRIDE - CELL_GAP;
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false });
   }, [habit.entries.length]);
