@@ -5,10 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useEffect } from "react";
-import { StatusBar } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { theme } from "@/utils/theme";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
+
+// Created once: recreating it on every render would drop the query cache.
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const { hasCompletedOnboarding, _hasHydrated } = useAuthStore();
@@ -43,12 +47,9 @@ export default function RootLayout() {
     return null;
   }
 
-  const queryClient = new QueryClient();
-
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#171717" }}>
-      <StatusBar hidden={true} />
-      {/* <StatusBar className="bg-neutral-900" /> */}
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.bg }}>
+      <StatusBar style="light" />
       <SQLiteProvider
         databaseName="habitTrackerApp4.db"
         onInit={migrateDbIfNeeded}
@@ -58,8 +59,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: "#171717" },
-              //animation: "none",
+              contentStyle: { backgroundColor: theme.bg },
             }}
           >
             <Stack.Screen
@@ -85,10 +85,13 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="habit/[id]"
+              options={{ headerShown: false, animation: "slide_from_right" }}
+            />
+            <Stack.Screen
               name="more"
               options={{
                 headerShown: false,
-                presentation: "transparentModal",
                 animation: "slide_from_right",
               }}
             />

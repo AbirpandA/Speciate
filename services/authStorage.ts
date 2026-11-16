@@ -2,8 +2,15 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+export type Profile = {
+  name: string;
+  focusAreas: string[];
+};
+
 type UserState = {
   hasCompletedOnboarding: boolean;
+  profile: Profile;
+  setProfile: (profile: Partial<Profile>) => void;
   _hasHydrated: boolean;
   completedOnboarding: () => void;
   resetOnboarding: () => void;
@@ -14,7 +21,10 @@ export const useAuthStore = create(
   persist<UserState>(
     (set) => ({
       hasCompletedOnboarding: false,
+      profile: { name: "", focusAreas: [] },
       _hasHydrated: false,
+      setProfile: (profile) =>
+        set((state) => ({ profile: { ...state.profile, ...profile } })),
       
       completedOnboarding: () => set({ hasCompletedOnboarding: true }),
       resetOnboarding: () =>

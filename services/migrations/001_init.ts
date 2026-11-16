@@ -67,5 +67,5 @@ CREATE TABLE IF NOT EXISTS subscription_history (
 CREATE TABLE IF NOT EXISTS migrations (
   version INTEGER PRIMARY KEY
 );
-INSERT INTO migrations (version) VALUES (1);
+INSERT OR IGNORE INTO migrations (version) VALUES (1);
 `;

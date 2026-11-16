@@ -1,16 +1,19 @@
+import { theme } from "./theme";
+
+/** @deprecated use `theme` from utils/theme. Kept for older components. */
 const Colors = {
   black: "#000000",
-  darkGray: "#292929",
-  mediumGray: "#585656",
+  darkGray: theme.elevated,
+  mediumGray: theme.muted,
   lightGray: "#E0E0E0",
   white: "#FFFFFF",
-  habitCardBackground: "#1C1C1C",
-  habitIconBackground: "#333333",
-  checkBoxBackground: "#404040",
+  habitCardBackground: theme.surface,
+  habitIconBackground: theme.elevated,
+  checkBoxBackground: theme.borderStrong,
   cellColor: "#2F2F2F",
   disabledCellColor: "#2c2c2c",
   checkMarkColor: "#666666",
-  borderColor: "#3f3f46",
+  borderColor: theme.border,
 } as const;
 
 export default Colors;

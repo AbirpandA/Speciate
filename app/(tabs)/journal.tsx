@@ -1,8 +1,9 @@
-import HomeHeader from "@/components/HomeHeader";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useJournal } from "@/hooks/useJournal";
 import { getDateInfo } from "@/utils/dateUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
+import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -61,7 +62,7 @@ export default function JournalScreen() {
   const pastEntries = entries.filter((e) => e.date !== todayDateStr);
 
   const renderEmpty = () => (
-    <View className="bg-neutral-800/50 p-5 rounded-2xl border border-neutral-800 border-dashed">
+    <View className="p-5 rounded-2xl border border-line border-dashed">
       <Text className="text-neutral-500 text-center">
         No past journal entries yet.
       </Text>
@@ -69,16 +70,16 @@ export default function JournalScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-900">
+    <SafeAreaView className="flex-1 bg-bg">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View className="flex-1 px-5 pt-4">
-          <HomeHeader />
+          <ScreenHeader title="Journal" subtitle={t.now.toFormat("cccc, d LLLL")} />
 
           {/* FIXED HEADER (Does not unmount when typing) */}
-          <View className="mb-4 mt-4">
+          <View className="mb-4">
             <View className="flex-row justify-between items-end mb-3">
               <Text className="text-white text-xl font-bold">
                 What did I learn today?
@@ -90,7 +91,7 @@ export default function JournalScreen() {
                 <Text className="text-neutral-500 text-sm">Saved</Text>
               )}
             </View>
-            <View className="bg-neutral-800 rounded-2xl border border-neutral-700">
+            <View className="bg-surface rounded-3xl border border-line">
               <TextInput
                 className="text-white text-lg px-4 py-4 min-h-[150px]"
                 placeholder="e.g. I learned how to use SQLite in React Native..."
@@ -102,7 +103,7 @@ export default function JournalScreen() {
               />
             </View>
 
-            <Text className="text-white text-xl font-bold mt-8">Past Learnings</Text>
+            <Text className="text-fg-secondary text-sm font-semibold uppercase tracking-wider mt-8">Past entries</Text>
           </View>
 
           <View className="flex-1">
@@ -110,19 +111,14 @@ export default function JournalScreen() {
               data={pastEntries}
               keyExtractor={(item) => item.id.toString()}
               ListEmptyComponent={renderEmpty}
-              estimatedItemSize={100}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={{ paddingBottom: 32 }}
               renderItem={({ item }) => (
-                <View className="bg-neutral-800 p-4 rounded-2xl mb-3 border border-neutral-700">
+                <View className="bg-surface p-4 rounded-3xl mb-3 border border-line">
                   <View className="flex-row justify-between items-center mb-2">
                     <Text className="text-neutral-400 font-semibold">
-                      {new Date(item.date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {DateTime.fromISO(item.date).toFormat("ccc, d LLL")}
                     </Text>
                     <TouchableOpacity onPress={() => deleteEntry(item.id)}>
                       <Ionicons name="trash-outline" size={18} color="#666" />
