@@ -18,8 +18,6 @@ module.exports = function (api) {
       "nativewind/babel"
     ],
     plugins: [
-      // expo-router should run first
-      "expo-router/babel",
       [
         "module-resolver",
         {

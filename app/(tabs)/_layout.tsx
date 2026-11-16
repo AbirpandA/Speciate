@@ -1,80 +1,47 @@
-import Colors from "@/utils/colors";
+import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
+const TABS: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
+  { name: "index", title: "Today", icon: "today-outline", iconActive: "today" },
+  { name: "goals", title: "Goals", icon: "flag-outline", iconActive: "flag" },
+  { name: "journal", title: "Journal", icon: "book-outline", iconActive: "book" },
+  { name: "analytics", title: "Insights", icon: "stats-chart-outline", iconActive: "stats-chart" },
+];
 
 export default function TabLayout() {
-  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: theme.bg },
+        tabBarActiveTintColor: theme.text,
+        tabBarInactiveTintColor: theme.muted,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
         tabBarStyle: {
-          backgroundColor: Colors.darkGray,
-          height: 50,
-          borderWidth: 0.5,
-          borderColor: Colors.white,
-          position: "absolute",
-          bottom: 20 + insets.bottom,
-          marginHorizontal: 40,
-          borderRadius: 40,
-          paddingTop: 5,
+          backgroundColor: theme.bg,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
+          paddingTop: 6,
         },
-
-        tabBarShowLabel: false,
       }}
+      screenListeners={{ tabPress: () => Haptics.selectionAsync() }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="home-outline"
-              size={26}
-              color={focused ? Colors.white : Colors.mediumGray}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="goals"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="flag-outline"
-              size={24}
-              color={focused ? Colors.white : Colors.mediumGray}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="journal"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="book-outline"
-              size={24}
-              color={focused ? Colors.white : Colors.mediumGray}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="bar-chart-outline"
-              size={24}
-              color={focused ? Colors.white : Colors.mediumGray}
-            />
-          ),
-        }}
-      />
+      {TABS.map((t) => (
+        <Tabs.Screen
+          key={t.name}
+          name={t.name}
+          options={{
+            title: t.title,
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons name={focused ? t.iconActive : t.icon} size={23} color={color as string} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

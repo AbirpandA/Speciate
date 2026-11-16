@@ -1,106 +1,163 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, Switch, TouchableOpacity, Alert } from "react-native";
-import { NotificationService } from "@/services/NotificationService";
+import AppLogo from "@/components/AppLogo";
+import Card from "@/components/ui/Card";
+import IconButton from "@/components/ui/IconButton";
+import { useArchivedHabits, useHabits } from "@/hooks/useHabits";
 import { BackupService } from "@/services/BackupService";
+import { useAuthStore } from "@/services/authStorage";
+import { invalidateHabitQueries } from "@/utils/queryKeys";
+import { theme } from "@/utils/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
+import React, { useState } from "react";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const MoreOptionsScreen = () => {
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Text className="text-muted text-xs font-semibold uppercase tracking-wider mb-2 mt-6">{children}</Text>
+  );
+}
+
+function Row({
+  icon,
+  label,
+  hint,
+  onPress,
+  danger,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  hint?: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" className="flex-row items-center py-3.5 active:opacity-60">
+      <Ionicons name={icon} size={20} color={danger ? theme.danger : theme.textSecondary} />
+      <Text className="flex-1 text-base ml-3" style={{ color: danger ? theme.danger : theme.text }}>
+        {label}
+      </Text>
+      {hint ? <Text className="text-muted text-sm">{hint}</Text> : null}
+    </Pressable>
+  );
+}
+
+export default function SettingsScreen() {
   const db = useSQLiteContext();
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    const settings = await NotificationService.getReminderSettings();
-    setReminderEnabled(settings.isEnabled);
-  };
-
-  const toggleReminder = async (value: boolean) => {
-    if (value) {
-      const success = await NotificationService.scheduleDailyReminder(20, 0); // 8 PM
-      if (success) {
-        setReminderEnabled(true);
-        Alert.alert("Success", "Daily reminders set for 8:00 PM");
-      } else {
-        Alert.alert("Permission Required", "Please enable notifications in your device settings.");
-      }
-    } else {
-      await NotificationService.cancelAllReminders();
-      setReminderEnabled(false);
-    }
-  };
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const profile = useAuthStore((s) => s.profile);
+  const setProfile = useAuthStore((s) => s.setProfile);
+  const resetOnboarding = useAuthStore((s) => s.resetOnboarding);
+  const [name, setName] = useState(profile?.name ?? "");
+  const { data: archived = [] } = useArchivedHabits();
+  const { restoreHabit } = useHabits();
 
   const handleExport = async () => {
     const res = await BackupService.exportData(db);
-    if (!res.success) {
-      Alert.alert("Export Failed", res.error || "Unknown error");
-    }
+    if (!res.success) Alert.alert("Export failed", res.error || "Unknown error");
   };
 
-  const handleImport = async () => {
-    Alert.alert(
-      "Warning",
-      "Importing data will overwrite your current habits. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Import", 
-          style: "destructive",
-          onPress: async () => {
-            const res = await BackupService.importData(db);
-            if (res.success) {
-              Alert.alert("Success", "Data imported successfully. Please restart the app to see changes.");
-            } else {
-              Alert.alert("Import Failed", res.error || "Unknown error");
-            }
+  const handleImport = () =>
+    Alert.alert("Replace your data?", "Importing a backup overwrites your current habits, goals and journal.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Import",
+        style: "destructive",
+        onPress: async () => {
+          const res = await BackupService.importData(db);
+          if (res.success) {
+            invalidateHabitQueries(queryClient);
+            queryClient.invalidateQueries();
+            Alert.alert("Done", "Your backup has been restored.");
+          } else if (res.error !== "Import cancelled") {
+            Alert.alert("Import failed", res.error || "Unknown error");
           }
-        }
-      ]
-    );
-  };
+        },
+      },
+    ]);
 
   return (
-    <View className="flex-1 bg-neutral-900 pt-16 px-6">
-      <Text className="text-white text-3xl font-bold mb-8">Settings</Text>
+    <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
+      <View className="flex-row items-center px-3 py-1">
+        <IconButton icon="chevron-back" accessibilityLabel="Back" onPress={() => router.back()} />
+        <Text className="text-white text-xl font-bold ml-2">Settings</Text>
+      </View>
 
-      <View className="mb-8">
-        <Text className="text-gray-400 text-sm font-bold uppercase mb-4 tracking-wider">Notifications</Text>
-        <View className="flex-row items-center justify-between bg-neutral-800 p-4 rounded-xl">
-          <View>
-            <Text className="text-white text-lg font-medium">Daily Reminder</Text>
-            <Text className="text-gray-400 text-sm">Remind me at 8:00 PM</Text>
-          </View>
-          <Switch 
-            value={reminderEnabled}
-            onValueChange={toggleReminder}
-            trackColor={{ false: "#3f3f46", true: "#10b981" }}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 }}>
+        <SectionLabel>You</SectionLabel>
+        <Card>
+          <Text className="text-muted text-sm mb-2">What should we call you?</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            onEndEditing={() => setProfile({ name: name.trim() })}
+            placeholder="Your first name"
+            placeholderTextColor={theme.muted}
+            className="text-white text-lg"
+            maxLength={30}
+            returnKeyType="done"
           />
+        </Card>
+
+        <SectionLabel>{`Archived habits${archived.length ? ` (${archived.length})` : ""}`}</SectionLabel>
+        <Card className="py-1">
+          {archived.length === 0 ? (
+            <Text className="text-muted py-3">Nothing archived. Archived habits keep their history.</Text>
+          ) : (
+            archived.map((h) => (
+              <View key={h.id} className="flex-row items-center py-3">
+                <Ionicons name={(h.icon as any) || "ellipse-outline"} size={20} color={h.color || theme.textSecondary} />
+                <Text className="text-white flex-1 ml-3" numberOfLines={1}>
+                  {h.name}
+                </Text>
+                <Pressable onPress={() => restoreHabit(h.id)} hitSlop={8} accessibilityRole="button">
+                  <Text className="font-semibold" style={{ color: theme.accent }}>
+                    Restore
+                  </Text>
+                </Pressable>
+              </View>
+            ))
+          )}
+        </Card>
+
+        <SectionLabel>Data & backup</SectionLabel>
+        <Card className="py-1">
+          <Row icon="share-outline" label="Export backup" hint="JSON file" onPress={handleExport} />
+          <View className="h-px bg-line" />
+          <Row icon="download-outline" label="Import backup" hint="Replaces data" onPress={handleImport} danger />
+        </Card>
+
+        <SectionLabel>Setup</SectionLabel>
+        <Card className="py-1">
+          <Row
+            icon="sparkles-outline"
+            label="Replay onboarding"
+            hint="Adds starter habits"
+            onPress={() =>
+              Alert.alert(
+                "Replay onboarding?",
+                "You'll go through the welcome quiz again. Your existing habits stay; any starters you pick are added.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Replay", onPress: () => resetOnboarding() },
+                ]
+              )
+            }
+          />
+        </Card>
+
+        <View className="items-center mt-10">
+          <AppLogo size={36} />
+          <Text className="text-white font-semibold mt-2">Speciate</Text>
+          <Text className="text-muted text-xs mt-0.5">
+            Version {Constants.expoConfig?.version ?? "—"} · Your data stays on this device
+          </Text>
         </View>
-      </View>
-
-      <View className="mb-8">
-        <Text className="text-gray-400 text-sm font-bold uppercase mb-4 tracking-wider">Data & Backup</Text>
-        
-        <TouchableOpacity 
-          className="bg-neutral-800 p-4 rounded-xl mb-3 flex-row items-center justify-between"
-          onPress={handleExport}
-        >
-          <Text className="text-white text-lg font-medium">Export Backup</Text>
-          <Text className="text-gray-400 text-sm">Save to Files</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          className="bg-neutral-800 p-4 rounded-xl flex-row items-center justify-between"
-          onPress={handleImport}
-        >
-          <Text className="text-red-400 text-lg font-medium">Import Backup</Text>
-          <Text className="text-gray-400 text-sm">Overwrite data</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
-};
-
-export default MoreOptionsScreen;
+}

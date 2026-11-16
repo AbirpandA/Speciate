@@ -1,58 +1,44 @@
-import { useMemo, useState } from "react";
-import { View } from "react-native";
+import TodayView from "@/components/TodayView";
+import IconButton from "@/components/ui/IconButton";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAuthStore } from "@/services/authStorage";
+import { greeting } from "@/utils/motivation";
+import { useRouter } from "expo-router";
+import { DateTime } from "luxon";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import EmptyView from "@/components/EmptyView";
-import HabitTabs from "@/components/HabitTabs";
-import HomeHeader from "@/components/HomeHeader";
-import MonthlyView from "@/components/MonthlyView";
-import OverallView from "@/components/OverallView";
-import TodayView from "@/components/TodayView";
-import WeeklyView from "@/components/WeeklyView";
-import { useHabits } from "@/hooks/useHabits";
-
-const FILTERS = ["Today", "Weekly", "Monthly", "Overall"] as const;
-type FilterType = (typeof FILTERS)[number];
-
-export default function HabitsScreen() {
-  const [activeTab, setActiveTab] = useState<FilterType>("Today");
-
-  const { habits } = useHabits();
-
-  const renderContent = useMemo(() => {
-    if (!habits || habits.length === 0) return null;
-
-    switch (activeTab) {
-      case "Today":
-        return <TodayView habits={habits} />;
-      case "Weekly":
-        return <WeeklyView />;
-      case "Monthly":
-        return <MonthlyView />;
-      case "Overall":
-        return <OverallView />;
-      default:
-        return null;
-    }
-  }, [activeTab, habits]);
-
-  const isEmpty = !habits || habits.length === 0;
+export default function TodayScreen() {
+  const router = useRouter();
+  const name = useAuthStore((s) => s.profile?.name);
+  const now = DateTime.local();
+  const hello = greeting(now.hour);
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-900">
-      <View className="flex-1 px-5 pt-4">
-        {/* Header */}
-        <HomeHeader />
-
-        {/* Tabs Component */}
-        <HabitTabs
-          filters={FILTERS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
-
-        {isEmpty ? <EmptyView /> : renderContent}
-      </View>
+    <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
+      <TodayView
+        header={
+          <ScreenHeader
+            subtitle={now.toFormat("cccc, d LLLL")}
+            title={name ? `${hello}, ${name}` : hello}
+            right={
+              <>
+                <IconButton
+                  icon="settings-outline"
+                  variant="filled"
+                  accessibilityLabel="Settings"
+                  onPress={() => router.push("/more")}
+                />
+                <IconButton
+                  icon="add"
+                  variant="accent"
+                  accessibilityLabel="New habit"
+                  onPress={() => router.push("/newHabit")}
+                />
+              </>
+            }
+          />
+        }
+      />
     </SafeAreaView>
   );
 }

@@ -7,7 +7,6 @@ import { Alert } from "react-native";
 export const useJournal = () => {
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
-  const t = getDateInfo();
 
   // Get all journal entries ordered by date descending
   const {
@@ -29,31 +28,44 @@ export const useJournal = () => {
     },
   });
 
-  // Save or update an entry for a specific date
+  // Save or update an entry for a specific date. Only the provided fields change.
   const saveEntryMutation = useMutation({
-    mutationFn: async ({ date, content }: { date: string; content: string }) => {
-      const timestamp = t.isoTimestamp;
-
-      // Check if entry exists
+    mutationFn: async ({
+      date,
+      content,
+      mood,
+      append,
+    }: {
+      date: string;
+      content?: string;
+      mood?: number | null;
+      /** add a paragraph to the end of the existing content */
+      append?: string;
+    }) => {
+      const timestamp = getDateInfo().isoTimestamp;
       const existing = await db.getFirstAsync<JournalEntry>(
-        'SELECT * FROM daily_journal WHERE date = ?',
+        "SELECT * FROM daily_journal WHERE date = ?",
         [date]
       );
+      let nextContent = content ?? existing?.content ?? "";
+      if (append) nextContent = nextContent.trim() ? `${nextContent.trim()}\n\n${append}` : append;
+      const nextMood = mood !== undefined ? mood : existing?.mood ?? null;
 
       if (existing) {
         await db.runAsync(
-          'UPDATE daily_journal SET content = ?, updated_at = ? WHERE date = ?',
-          [content, timestamp, date]
+          "UPDATE daily_journal SET content = ?, mood = ?, updated_at = ? WHERE date = ?",
+          [nextContent, nextMood, timestamp, date]
         );
       } else {
         await db.runAsync(
-          'INSERT INTO daily_journal (date, content, created_at) VALUES (?, ?, ?)',
-          [date, content, timestamp]
+          "INSERT INTO daily_journal (date, content, mood, created_at) VALUES (?, ?, ?, ?)",
+          [date, nextContent, nextMood, timestamp]
         );
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["journal_entries"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (e) => {
       console.error(e);
@@ -79,7 +91,8 @@ export const useJournal = () => {
     isLoading,
     error,
     refetch,
-    saveEntry: (data: { date: string; content: string }) => saveEntryMutation.mutateAsync(data),
+    saveEntry: (data: { date: string; content?: string; mood?: number | null; append?: string }) =>
+      saveEntryMutation.mutateAsync(data),
     deleteEntry: (id: number) => deleteEntryMutation.mutate(id),
   };
 };

@@ -1,47 +1,69 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 import { INIT_SQL } from "./migrations/001_init";
+import { MIGRATION_002_SQL } from "./migrations/002_goals";
+import { MIGRATION_003_SQL } from "./migrations/003_journal";
+import { migrate004 } from "./migrations/004_v3";
 
-export async function migrateDbIfNeeded(db: SQLiteDatabase) {
-  const DATABASE_VERSION = 3;
+export const DATABASE_VERSION = 4;
 
-  // Get current database version
-  const result = await db.getFirstAsync<{ user_version: number }>(
-    "PRAGMA user_version"
-  );
+type Step = (db: SQLiteDatabase) => Promise<void>;
 
-  // Handle null case - default to 0 if no version is set
-  let currentDbVersion = result?.user_version ?? 0;
+// Index i migrates from version i to version i + 1. Every step must be
+// idempotent: a crash between running a step and saving the new version
+// means the step runs again on the next launch.
+const STEPS: Step[] = [
+  (db) => db.execAsync(INIT_SQL),
+  (db) => db.execAsync(MIGRATION_002_SQL),
+  (db) => db.execAsync(MIGRATION_003_SQL),
+  migrate004,
+];
 
-  // If already at or above target version, skip migration
-  if (currentDbVersion >= DATABASE_VERSION) {
-    return;
+/** Run a step in its own transaction, rolling back cleanly on failure. */
+async function runInTransaction(db: SQLiteDatabase, step: Step) {
+  await db.execAsync("BEGIN;");
+  try {
+    await step(db);
+    await db.execAsync("COMMIT;");
+  } catch (error) {
+    try {
+      await db.execAsync("ROLLBACK;");
+    } catch {
+      // SQLite may already have rolled back on its own; keep the original error.
+    }
+    throw error;
   }
+}
 
-  // Migration 001: Initial schema
-  if (currentDbVersion === 0) {
-    // Enable WAL mode for better performance
+async function runMigrations(db: SQLiteDatabase) {
+  const result = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
+  let version = result?.user_version ?? 0;
+  if (version >= DATABASE_VERSION) return;
+
+  if (version === 0) {
     await db.execAsync(`PRAGMA journal_mode = 'wal';`);
-
-    // Execute the initial schema from imported SQL
-    await db.execAsync(INIT_SQL);
-
-    currentDbVersion = 1;
   }
 
-  // Migration 002: Add Goals
-  if (currentDbVersion === 1) {
-    const { MIGRATION_002_SQL } = await import('./migrations/002_goals');
-    await db.execAsync(MIGRATION_002_SQL);
-    currentDbVersion = 2;
+  // Table rebuilds need foreign keys off; the pragma is ignored inside a
+  // transaction, so set it around the whole run.
+  await db.execAsync("PRAGMA foreign_keys = OFF;");
+  try {
+    while (version < DATABASE_VERSION) {
+      await runInTransaction(db, STEPS[version]);
+      version += 1;
+      await db.execAsync(`PRAGMA user_version = ${version}`);
+    }
+  } finally {
+    await db.execAsync("PRAGMA foreign_keys = ON;");
   }
+}
 
-  // Migration 003: Add Daily Journal
-  if (currentDbVersion === 2) {
-    const { MIGRATION_003_SQL } = await import('./migrations/003_journal');
-    await db.execAsync(MIGRATION_003_SQL);
-    currentDbVersion = 3;
-  }
+// One migration at a time per database, even if the provider calls onInit twice.
+const inFlight = new WeakMap<SQLiteDatabase, Promise<void>>();
 
-  // Update database version
-  await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
+export function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
+  const running = inFlight.get(db);
+  if (running) return running;
+  const promise = runMigrations(db).finally(() => inFlight.delete(db));
+  inFlight.set(db, promise);
+  return promise;
 }

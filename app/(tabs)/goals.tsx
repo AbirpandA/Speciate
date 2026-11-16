@@ -1,10 +1,10 @@
 import GoalItem from "@/components/GoalItem";
-import HomeHeader from "@/components/HomeHeader";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import IconButton from "@/components/ui/IconButton";
 import { useGoals } from "@/hooks/useGoals";
-import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Goal } from "@/types/dbTypes";
 
@@ -27,16 +27,26 @@ export default function GoalsScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-900">
+    <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-1 px-5 pt-4">
-        <HomeHeader />
+        <ScreenHeader
+          title="Goals"
+          subtitle="Where you're heading"
+          right={
+            <IconButton
+              icon="add"
+              variant="accent"
+              accessibilityLabel="New goal"
+              onPress={() => router.push("/newGoal")}
+            />
+          }
+        />
 
-        <View className="flex-1 mt-4">
+        <View className="flex-1">
           <FlashList
             data={data}
-            estimatedItemSize={80}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 32 }}
             getItemType={(item) => {
               if (typeof item === "string") return "header";
               if ("empty" in item) return "empty";
@@ -44,12 +54,12 @@ export default function GoalsScreen() {
             }}
             renderItem={({ item }) => {
               if (typeof item === "string") {
-                return <Text className="text-white text-xl font-bold mt-4 mb-3">{item}</Text>;
+                return <Text className="text-fg-secondary text-sm font-semibold uppercase tracking-wider mt-4 mb-3">{item}</Text>;
               }
               if ("empty" in item) {
                 return (
-                  <View className="bg-neutral-800/50 p-5 rounded-2xl border border-neutral-800 border-dashed mb-4">
-                    <Text className="text-neutral-500 text-center">No goals set yet.</Text>
+                  <View className="p-5 rounded-2xl border border-line border-dashed mb-4">
+                    <Text className="text-muted text-center">No goals here yet. Tap + to add one.</Text>
                   </View>
                 );
               }
@@ -65,13 +75,6 @@ export default function GoalsScreen() {
           />
         </View>
 
-        {/* Floating Action Button */}
-        <TouchableOpacity
-          className="absolute bottom-28 right-5 w-16 h-16 rounded-full bg-white items-center justify-center shadow-lg"
-          onPress={() => router.push("/newGoal")}
-        >
-          <Ionicons name="add" size={36} color="black" />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

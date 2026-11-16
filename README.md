@@ -1,4 +1,4 @@
-# Speciate (Version 2)
+# Speciate (Version 3)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React Native](https://img.shields.io/badge/React_Native-20232A?style=flat&logo=react&logoColor=61DAFB)
@@ -15,6 +15,16 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 
 ---
 
+## 🌱 New in Version 3
+- **✓ / ✕ Build and break habits**: Track the things you want to do *and* the things you want to stop. Habits you're breaking show a days-clean counter with milestone celebrations.
+- **🌊 Urge surfing**: Rate an urge, name the trigger, and ride it out with a 2-minute guided breathing timer that shows your reason for quitting.
+- **🗓 A schedule you can follow**: Every day, specific weekdays, or X times per week; Morning / Afternoon / Evening sections; count goals (e.g. 8 glasses); skip days that don't break your streak.
+- **🧠 Built on habit psychology**: "After I…" cues (implementation intentions), your personal *why*, "never miss twice" streak grace, and compassionate slip logging.
+- **📈 Insights**: Weekly score, a consistency heatmap, per-habit completion, best and toughest weekdays, top triggers, and mood vs. completion.
+- **📝 Weekly review & mood journal**: A start-of-week reflection saved to your journal, daily mood check-ins, and rotating prompts.
+- **👋 Personal onboarding**: Pick your focus areas and what you want to quit; get small starter habits from a template library.
+- **🔎 Habit detail**: Streaks, completion rates, a month calendar where you can fix past days, and notes.
+
 ## 🔥 New in Version 2
 - **🎯 Goals System**: Set, track, and crush your Weekly, Monthly, and Long-Term goals!
 - **📔 Daily Journal**: A dedicated space to reflect on "What did I learn today?" featuring a seamless, zero-distraction Auto-Save engine and an endless timeline of your past learnings.
@@ -23,7 +33,6 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 ## ✨ Core Features
 - **🔒 Offline First**: Uses robust local SQLite storage. Your data never leaves your device.
 - **🔥 Streaks & Gamification**: Automatically calculates your Current and Longest streaks to keep you motivated.
-- **📊 Advanced Analytics**: Custom built SVG line charts to visualize your 7-day completion trends.
 - **💾 Backup & Restore**: Full JSON export and import capabilities so you can safely backup your data to Google Drive or iCloud.
 - **🤌 Satisfying UX**: Premium haptics and spring animations using `react-native-reanimated` make checking off habits incredibly rewarding.
 - **🌙 True Dark Mode**: A deep, OLED-friendly dark theme that is easy on the eyes.
@@ -32,7 +41,7 @@ Small steps every day lead to big changes. This app is designed to get out of yo
 
 ## 🛠 Tech Stack
 
-- **Framework**: React Native & Expo (SDK 54)
+- **Framework**: React Native 0.88 & Expo (SDK 58)
 - **Language**: TypeScript
 - **Database**: `expo-sqlite`
 - **Animations**: `react-native-reanimated`
@@ -62,8 +71,13 @@ To run this project locally on your machine:
    ```
 
 4. **Run on your device**
-   - Download the **Expo Go** app on your iOS or Android device.
+   - Download the **Expo Go** app (it must support SDK 58) on your iOS or Android device.
    - Scan the QR code in your terminal.
+   - If your phone can't reach your computer over Wi-Fi, use a tunnel instead:
+     ```bash
+     npx expo start --tunnel ngrok
+     ```
+     (Expo's default tunnel currently fails on Node 26; ngrok is included as a dev dependency.)
 
 ---
 

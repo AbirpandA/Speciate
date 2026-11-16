@@ -67,7 +67,7 @@ export default function NewGoalScreen() {
             keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "none"}
           >
             {/* TITLE */}
-            <Text className="text-white text-lg font-bold mb-2 mt-4">What's your goal?</Text>
+            <Text className="text-white text-lg font-bold mb-2 mt-4">What&apos;s your goal?</Text>
             <TextInput
               className="bg-neutral-800 px-4 py-4 rounded-xl text-white mb-6 border border-neutral-700 text-lg"
               placeholder="e.g. Read 2 books, Run a marathon"

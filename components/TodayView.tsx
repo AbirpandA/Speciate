@@ -1,237 +1,275 @@
-// components/TodayView.tsx
-import HabitActionSheet from "@/components/HabitActionSheet";
-import { useHabitActions } from "@/hooks/useHabitActions";
-import {
-  HabitWithEntry,
-  useHabitEntriesByPeriod,
-} from "@/hooks/useHabitEntriesByPeriod";
-import { useHabits } from "@/hooks/useHabits";
-import { useToggleHabitEntry } from "@/hooks/useToggle";
-import { Habit } from "@/types/dbTypes";
-import Colors from "@/utils/colors";
-import { getDateInfo } from "@/utils/dateUtils";
+import AtRiskBanner from "@/components/today/AtRiskBanner";
+import Celebration, { CelebrationMessage } from "@/components/today/Celebration";
+import CountSheet from "@/components/today/CountSheet";
+import DailyCard from "@/components/today/DailyCard";
+import HabitCard from "@/components/today/HabitCard";
+import QuickActionsSheet from "@/components/today/QuickActionsSheet";
+import QuitCard from "@/components/today/QuitCard";
+import WeekStrip from "@/components/today/WeekStrip";
+import WeeklyReviewCard from "@/components/today/WeeklyReviewCard";
+import { useJournal } from "@/hooks/useJournal";
+import { useWeeklyReview } from "@/hooks/useWeeklyReview";
+import { DayHabit, useDayHabits, useWeekProgress } from "@/hooks/useDayHabits";
+import { QuitHabit, useQuitHabits } from "@/hooks/useQuitHabits";
+import { useSetHabitEntry } from "@/hooks/useToggle";
+import { useAuthStore } from "@/services/authStorage";
+import { motivationLine } from "@/utils/motivation";
+import { reachedMilestone } from "@/utils/quitStats";
+import { dailyTarget, TIME_OF_DAY_META, TIME_OF_DAY_ORDER } from "@/utils/schedule";
+import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import { useRouter } from "expo-router";
+import { DateTime } from "luxon";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
-import React, { useCallback } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { FlashList } from "@shopify/flash-list";
-
-interface TodayViewProps {
-  habits?: any[]; // Keep for backward compatibility, but we'll use hook data
-}
-
-const AnimatedCheckbox = ({ isChecked, onPress, checkboxColor, checkmarkColor }: any) => {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return { transform: [{ scale: scale.value }] };
-  });
-
-  const handlePress = (e: any) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    scale.value = withSequence(
-      withSpring(0.8, { damping: 10 }),
-      withSpring(1.1, { damping: 10 }),
-      withSpring(1, { damping: 10 })
-    );
-    onPress(e);
-  };
-
+function SectionTitle({ icon, label, count }: { icon: string; label: string; count?: string }) {
   return (
-    <Pressable onPress={handlePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Animated.View
-        className="rounded-2xl items-center justify-center"
-        style={[
-          { backgroundColor: checkboxColor, width: 48, height: 48 },
-          animatedStyle,
-        ]}
-      >
-        <Ionicons name="checkmark" size={25} color={checkmarkColor} />
-      </Animated.View>
-    </Pressable>
-  );
-};
-
-const HabitRow = React.memo(({ item, handleCardPress, handleCardLongPress, handleCheckboxPress }: any) => {
-  const isChecked = item.entry_status === 1;
-  const checkboxColor = isChecked
-    ? item.color || "#fff"
-    : Colors.checkBoxBackground;
-  const checkmarkColor = isChecked ? "white" : Colors.checkMarkColor;
-
-  return (
-    <View
-      className="flex-row items-center justify-between rounded-2xl p-4 mb-4"
-      style={{
-        backgroundColor: Colors.habitCardBackground,
-        borderWidth: 1,
-        borderColor: Colors.borderColor,
-      }}
-    >
-      <TouchableOpacity
-        onPress={() => handleCardPress(item)}
-        onLongPress={() => handleCardLongPress(item)}
-        className="flex-row items-center flex-1"
-        activeOpacity={0.7}
-      >
-        <View
-          className="bg-neutral-800 rounded-2xl p-4 mr-3"
-          style={{ backgroundColor: Colors.habitIconBackground }}
-        >
-          <Ionicons
-            name={(item.icon as any) ?? "help-outline"}
-            size={24}
-            color="#fff"
-          />
-        </View>
-        <Text className="flex-1 text-white text-lg">{item.name}</Text>
-      </TouchableOpacity>
-
-      <AnimatedCheckbox
-        isChecked={isChecked}
-        onPress={(e: any) => handleCheckboxPress(item, e)}
-        checkboxColor={checkboxColor}
-        checkmarkColor={checkmarkColor}
-      />
+    <View className="flex-row items-center mt-2 mb-3">
+      <Ionicons name={icon as any} size={15} color={theme.muted} />
+      <Text className="text-muted text-xs font-semibold uppercase tracking-wider ml-1.5 flex-1">
+        {label}
+      </Text>
+      {count ? <Text className="text-muted text-xs font-semibold">{count}</Text> : null}
     </View>
   );
-}, (prev, next) => {
-  return (
-    prev.item.entry_status === next.item.entry_status &&
-    prev.item.id === next.item.id &&
-    prev.item.name === next.item.name &&
-    prev.item.icon === next.item.icon &&
-    prev.item.color === next.item.color
-  );
-});
+}
 
-export default function TodayView({ habits: _habits }: TodayViewProps) {
+export default function TodayView({ header }: { header: React.ReactNode }) {
   const router = useRouter();
-  const {
-    selectedHabit,
-    actionSheetOpen,
-    confirmSheet,
-    openActions,
-    closeActions,
-    showConfirm,
-    closeConfirm,
-    handleConfirm,
-  } = useHabitActions();
+  const today = DateTime.local().toFormat("yyyy-MM-dd");
+  const [selected, setSelected] = useState(today);
+  const [sheetHabit, setSheetHabit] = useState<DayHabit | null>(null);
+  const [countHabit, setCountHabit] = useState<DayHabit | null>(null);
+  const [celebration, setCelebration] = useState<CelebrationMessage | null>(null);
+  const celebrated = useAuthStore((s) => s.celebrated);
+  const markCelebrated = useAuthStore((s) => s.markCelebrated);
+  const reviewedWeek = useAuthStore((s) => s.reviewedWeek);
+  const setReviewedWeek = useAuthStore((s) => s.setReviewedWeek);
+  const { saveEntry } = useJournal();
+  // Review last week until done or dismissed (any day this week).
+  const lastWeekStart = DateTime.local().startOf("week").minus({ weeks: 1 }).toFormat("yyyy-MM-dd");
+  const reviewDue = reviewedWeek !== lastWeekStart;
+  const { data: review } = useWeeklyReview(reviewDue);
 
-  const t = getDateInfo();
+  const { data: habits = [], isLoading } = useDayHabits(selected);
+  const { data: week = [] } = useWeekProgress(selected);
+  const { data: quitHabits = [] } = useQuitHabits();
+  const { setEntry } = useSetHabitEntry();
 
-  const { archiveHabit, deleteHabit } = useHabits();
-  const { toggleCheck } = useToggleHabitEntry();
+  const isToday = selected === today;
+  const active = habits.filter((h) => h.entry_status !== 2);
+  const done = active.filter((h) => h.entry_status === 1).length;
+  const total = active.length;
 
-  // Fetch habits with today's entry status - explicitly type as HabitWithEntry[]
-  const {
-    data: habitsWithEntries,
-    isLoading,
-    error,
-    refetch,
-  } = useHabitEntriesByPeriod("today");
+  // Celebrate only on the transition to "all done" for today, not on load.
+  const prevDone = useRef<number | null>(null);
+  useEffect(() => {
+    if (isLoading) return;
+    if (isToday && prevDone.current !== null && prevDone.current < total && done === total && total > 0) {
+      setCelebration({ emoji: "🌱", title: "Day complete" });
+    }
+    prevDone.current = isToday ? done : null;
+  }, [done, total, isToday, isLoading]);
 
-  // Refetch when screen comes into focus (e.g., returning from edit/reorder screens)
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [refetch])
+  // Quit milestones (1, 3, 7, 14, 30... days clean): celebrate each once per
+  // run. Derived during render; acknowledged (stored) when the burst ends.
+  const findPendingMilestone = () => {
+    for (const h of quitHabits) {
+      const m = reachedMilestone(h.stats.currentDays);
+      if (!m) continue;
+      const seen = celebrated?.[h.id];
+      if (seen && seen.since === h.stats.since && seen.days >= m) continue;
+      return {
+        habitId: h.id,
+        since: h.stats.since,
+        days: m,
+        message: {
+          emoji: m >= 30 ? "🏆" : "✨",
+          title: `${m} day${m === 1 ? "" : "s"} clean`,
+          subtitle: `${h.name}: you're proving you can.`,
+        } as CelebrationMessage,
+      };
+    }
+    return null;
+  };
+  const pendingMilestone = findPendingMilestone();
+  const shownCelebration = celebration ?? pendingMilestone?.message ?? null;
+  const onCelebrationDone = () => {
+    if (celebration) setCelebration(null);
+    else if (pendingMilestone) {
+      markCelebrated(pendingMilestone.habitId, pendingMilestone.since, pendingMilestone.days);
+    }
+  };
+
+  const onCheck = useCallback(
+    (h: DayHabit) => {
+      const target = dailyTarget(h);
+      if (h.entry_status === 1) {
+        setEntry({ habitId: h.id, date: selected, status: null, value: null });
+      } else if (target > 1) {
+        const next = (h.entry_value ?? 0) + 1;
+        setEntry({ habitId: h.id, date: selected, status: next >= target ? 1 : 0, value: next });
+      } else {
+        setEntry({ habitId: h.id, date: selected, status: 1 });
+      }
+    },
+    [selected, setEntry]
   );
 
-  // Type assertion to ensure TypeScript knows this is HabitWithEntry[]
-  const habitsData: HabitWithEntry[] =
-    (habitsWithEntries as HabitWithEntry[]) || [];
+  const setCount = useCallback(
+    (h: DayHabit, value: number) =>
+      setEntry({
+        habitId: h.id,
+        date: selected,
+        status: value >= dailyTarget(h) ? 1 : value > 0 ? 0 : null,
+        value: value > 0 ? value : null,
+      }),
+    [selected, setEntry]
+  );
+  const openCount = useCallback(
+    (h: DayHabit) => (dailyTarget(h) > 1 ? setCountHabit(h) : setSheetHabit(h)),
+    []
+  );
 
-  //console.log("Data", JSON.stringify(habitsData, null, 2));
+  const openDetails = useCallback(
+    (h: { id: number }) => router.push({ pathname: "/habit/[id]", params: { id: String(h.id) } }),
+    [router]
+  );
 
-  const handleArchive = (habit: Habit) => {
-    archiveHabit(habit.id);
-  };
+  const sections = useMemo(() => {
+    const groups = TIME_OF_DAY_ORDER.map((tod) => ({
+      tod,
+      items: habits.filter((h) => (h.time_of_day ?? "anytime") === tod),
+    })).filter((g) => g.items.length > 0);
+    return groups;
+  }, [habits]);
+  const showSectionTitles = sections.length > 1 || (sections[0] && sections[0].tod !== "anytime");
 
-  const handleDelete = (habit: Habit) => {
-    deleteHabit(habit.id);
-  };
-
-  const handleEdit = (habit: Habit) => {
-    router.push({
-      pathname: "/newHabit",
-      params: { habitId: habit.id.toString() },
-    });
-  };
-
-  const handleReorder = () => {
-    router.push("/reorder");
-  };
-
-  // Handle checkbox press
-  const handleCheckboxPress = useCallback((habit: HabitWithEntry, e: any) => {
-    e.stopPropagation();
-    toggleCheck(habit.id, t.date, habit.entry_status);
-  }, [toggleCheck, t.date]);
-
-  // Handle card press
-  const handleCardPress = useCallback((habit: HabitWithEntry) => {
-    // TODO: Navigate to habit detail screen
-  }, []);
-
-  // Handle long press (for action sheet)
-  const handleCardLongPress = useCallback((habit: HabitWithEntry) => {
-    openActions(habit as Habit);
-  }, [openActions]);
-
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-white">Error loading habits</Text>
-      </View>
-    );
-  }
+  const selectedDt = DateTime.fromISO(selected);
+  const line = motivationLine({
+    done,
+    total,
+    hour: DateTime.local().hour,
+    isToday,
+    dayOfYear: selectedDt.ordinal,
+  });
+  const nothingYet = habits.length === 0 && quitHabits.length === 0 && !isLoading;
 
   return (
     <View className="flex-1">
-      <FlashList<HabitWithEntry>
-        data={habitsData}
-        keyExtractor={(item) => `habit-${item.id}`}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        estimatedItemSize={80}
-        renderItem={({ item }) => (
-          <HabitRow 
-            item={item} 
-            handleCardPress={handleCardPress}
-            handleCardLongPress={handleCardLongPress}
-            handleCheckboxPress={handleCheckboxPress}
-          />
+      >
+        {header}
+        <WeekStrip days={week} selected={selected} today={today} onSelect={setSelected} />
+
+        {nothingYet ? (
+          <View className="items-center mt-16 px-6">
+            <View className="w-20 h-20 rounded-full bg-surface border border-line items-center justify-center mb-5">
+              <Ionicons name="leaf-outline" size={34} color={theme.accent} />
+            </View>
+            <Text className="text-white text-xl font-bold text-center">Start with one small habit</Text>
+            <Text className="text-muted text-center mt-2 leading-5">
+              Pick something you can do in two minutes, or something you want to stop. Tap + above.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {habits.length > 0 && (
+              <DailyCard
+                done={done}
+                total={total}
+                line={line}
+                label={isToday ? "Today" : selectedDt.toFormat("cccc, d LLL")}
+              />
+            )}
+
+            {isToday && reviewDue && review && review.rate != null && (
+              <WeeklyReviewCard
+                review={review}
+                onDismiss={() => setReviewedWeek(lastWeekStart)}
+                onSave={async (text) => {
+                  await saveEntry({ date: today, append: `Weekly review: ${text}` });
+                  setReviewedWeek(lastWeekStart);
+                }}
+              />
+            )}
+
+            {isToday && (
+              <AtRiskBanner
+                habits={habits.filter((h) => h.at_risk && h.entry_status !== 1 && h.entry_status !== 2)}
+              />
+            )}
+
+            {isLoading ? (
+              <ActivityIndicator color={theme.accent} className="mt-6" />
+            ) : (
+              sections.map((g) => (
+                <View key={g.tod}>
+                  {showSectionTitles && (
+                    <SectionTitle
+                      icon={TIME_OF_DAY_META[g.tod].icon}
+                      label={TIME_OF_DAY_META[g.tod].label}
+                      count={`${g.items.filter((h) => h.entry_status === 1).length}/${g.items.length}`}
+                    />
+                  )}
+                  {g.items.map((h) => (
+                    <HabitCard
+                      key={h.id}
+                      habit={h}
+                      showStreak={isToday}
+                      onPress={openDetails}
+                      onLongPress={setSheetHabit}
+                      onCheck={onCheck}
+                      onCheckLongPress={openCount}
+                    />
+                  ))}
+                </View>
+              ))
+            )}
+
+            {quitHabits.length > 0 && (
+              <View className="mt-3">
+                <SectionTitle icon="shield-checkmark-outline" label="Breaking" />
+                {quitHabits.map((h: QuitHabit) => (
+                  <QuitCard
+                    key={h.id}
+                    habit={h}
+                    onPress={openDetails}
+                    onUrge={(q) => router.push({ pathname: "/urge/[id]", params: { id: String(q.id) } })}
+                  />
+                ))}
+              </View>
+            )}
+          </>
         )}
+      </ScrollView>
+
+      <QuickActionsSheet
+        habit={sheetHabit}
+        onClose={() => setSheetHabit(null)}
+        onSkip={(h) => setEntry({ habitId: h.id, date: selected, status: 2, value: null })}
+        onReset={(h) => setEntry({ habitId: h.id, date: selected, status: null, value: null })}
+        onEdit={(h) => router.push({ pathname: "/newHabit", params: { habitId: String(h.id) } })}
+        onDetails={openDetails}
+        onSetCount={(h) => setCountHabit(h)}
+        onReorder={() => router.push("/reorder")}
       />
 
-      <HabitActionSheet
-        selectedHabit={selectedHabit}
-        actionSheetOpen={actionSheetOpen}
-        confirmSheet={confirmSheet}
-        onCloseActions={closeActions}
-        onShowConfirm={showConfirm}
-        onCloseConfirm={closeConfirm}
-        onConfirm={() => handleConfirm(handleArchive, handleDelete)}
-        onEdit={handleEdit}
-        onReorder={handleReorder}
+      <CountSheet
+        key={countHabit ? `count-${countHabit.id}` : "count-none"}
+        habit={countHabit}
+        onClose={() => setCountHabit(null)}
+        onSave={setCount}
+      />
+
+      <Celebration
+        key={shownCelebration ? `${shownCelebration.title}|${shownCelebration.subtitle ?? ""}` : "none"}
+        message={shownCelebration}
+        onDone={onCelebrationDone}
       />
     </View>
   );
