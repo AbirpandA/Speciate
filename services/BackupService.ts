@@ -2,7 +2,6 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { SQLiteDatabase } from "expo-sqlite";
-import { rebuildHeatmapCache } from "./heatmapCache";
 
 const BACKUP_TABLES = [
   "habits",
@@ -115,7 +114,6 @@ export const BackupService = {
             await db.execAsync(`DELETE FROM ${table};`);
             await insertRows(db, table, rows);
           }
-          await rebuildHeatmapCache(db);
         });
       } finally {
         await db.execAsync("PRAGMA foreign_keys = ON;");

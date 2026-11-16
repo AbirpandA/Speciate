@@ -1,5 +1,4 @@
 import type { EntryStatus } from "@/types/dbTypes";
-import { writeHeatmapDay } from "@/services/heatmapCache";
 import { invalidateHabitQueries } from "@/utils/queryKeys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSQLiteContext } from "expo-sqlite";
@@ -46,7 +45,6 @@ export const useSetHabitEntry = () => {
         }
       }
 
-      await writeHeatmapDay(db, habitId, date, status);
     },
     onSuccess: () => invalidateHabitQueries(queryClient),
   });

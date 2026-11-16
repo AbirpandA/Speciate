@@ -8,9 +8,6 @@ const HABIT_QUERY_ROOTS = [
   "habit-detail",
   "habit-entries",
   "week-progress",
-  "heatmap-weekly",
-  "heatmap-monthly",
-  "heatmap-overall",
   "analytics",
 ];
 
