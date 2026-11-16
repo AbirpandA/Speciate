@@ -89,6 +89,10 @@ export default function RootLayout() {
               options={{ headerShown: false, animation: "slide_from_right" }}
             />
             <Stack.Screen
+              name="urge/[id]"
+              options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }}
+            />
+            <Stack.Screen
               name="more"
               options={{
                 headerShown: false,

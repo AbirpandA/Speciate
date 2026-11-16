@@ -16,6 +16,11 @@ export type HabitStats = {
   rate30: number; // 0..1
   rateAll: number; // 0..1
   totalDone: number;
+  /**
+   * "Never miss twice": the last scheduled day was missed, so missing the
+   * next one will reset the streak.
+   */
+  atRisk: boolean;
 };
 
 const fmt = (d: DateTime) => d.toFormat("yyyy-MM-dd");
@@ -34,6 +39,8 @@ function scheduledDays(habit: StatsHabit): number[] | null {
  * Schedule-aware streaks and completion rates.
  *  - Only scheduled days count. Skipped days (status 2) are neutral.
  *  - Today being unlogged never breaks a streak (the day isn't over).
+ *  - Never miss twice: one missed scheduled day pauses the streak (it
+ *    doesn't grow) but only two misses in a row reset it.
  *  - Times-per-week habits are judged per Mon-Sun week; the current week
  *    counts once met, and never breaks the streak while in progress.
  */
@@ -87,11 +94,13 @@ export function calculateHabitStats(
       rate30: weeksTotal30 ? weeksMet30 / weeksTotal30 : 0,
       rateAll: weeksTotal ? weeksMet / weeksTotal : 0,
       totalDone,
+      atRisk: false,
     };
   }
 
   const days = scheduledDays(habit);
   let run = 0;
+  let misses = 0; // consecutive scheduled misses
   let longest = 0;
   let expected = 0;
   let done = 0;
@@ -104,6 +113,7 @@ export function calculateHabitStats(
     const isToday = key === today;
     if (status === 2) continue; // skipped: neutral
     if (status === 1) {
+      misses = 0;
       run++;
       longest = Math.max(longest, run);
       expected++;
@@ -113,7 +123,8 @@ export function calculateHabitStats(
         done30++;
       }
     } else if (!isToday) {
-      run = 0;
+      misses++;
+      if (misses >= 2) run = 0;
       expected++;
       if (key >= thirtyAgo) expected30++;
     }
@@ -126,5 +137,6 @@ export function calculateHabitStats(
     rate30: expected30 ? done30 / expected30 : 0,
     rateAll: expected ? done / expected : 0,
     totalDone,
+    atRisk: misses === 1 && run > 0,
   };
 }

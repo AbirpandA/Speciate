@@ -1,4 +1,5 @@
 import type { Habit } from "@/types/dbTypes";
+import { calculateHabitStats } from "@/utils/habitStats";
 import { isScheduledOn } from "@/utils/schedule";
 import { useQuery } from "@tanstack/react-query";
 import { useSQLiteContext } from "expo-sqlite";
@@ -10,6 +11,10 @@ export type DayHabit = Habit & {
   entry_note: string | null;
   /** completions this week (Mon-Sun) for times-per-week habits */
   week_done: number;
+  /** current streak as of today (days, or weeks for X-per-week habits) */
+  streak: number;
+  /** last scheduled day was missed: missing again resets the streak */
+  at_risk: boolean;
 };
 
 /** Active build habits scheduled on `date`, with that day's entry. */
@@ -39,10 +44,27 @@ export const useDayHabits = (date: string) => {
 
       // Dedupe in case legacy data has more than one entry per day
       const seen = new Set<number>();
-      return rows.filter((h) => {
+      const scheduled = rows.filter((h) => {
         if (seen.has(h.id) || !isScheduledOn(h, date)) return false;
         seen.add(h.id);
         return true;
+      });
+
+      // Streaks need each habit's full history; one query, grouped in JS.
+      const history = await db.getAllAsync<{ habit_id: number; date: string; status: number }>(
+        `SELECT e.habit_id, e.date, e.status FROM habits_entry e
+           JOIN habits h ON h.id = e.habit_id
+          WHERE h.active = 1 AND h.type = 'build'`
+      );
+      const byHabit = new Map<number, { date: string; status: number }[]>();
+      for (const e of history) {
+        const list = byHabit.get(e.habit_id) ?? [];
+        list.push(e);
+        byHabit.set(e.habit_id, list);
+      }
+      return scheduled.map((h) => {
+        const stats = calculateHabitStats(h, byHabit.get(h.id) ?? []);
+        return { ...h, streak: stats.currentStreak, at_risk: stats.atRisk };
       });
     },
   });

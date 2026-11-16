@@ -15,7 +15,6 @@ import { calculateQuitStats, nextMilestone } from "@/utils/quitStats";
 import { describeSchedule, isScheduledOn, TIME_OF_DAY_META } from "@/utils/schedule";
 import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { DateTime } from "luxon";
 import React, { useMemo, useState } from "react";
@@ -162,7 +161,7 @@ export default function HabitDetailScreen() {
               <StatTile
                 label="Streak"
                 value={`${buildStats.currentStreak} 🔥`}
-                hint={buildStats.streakUnit}
+                hint={buildStats.atRisk ? "missed last time: don't miss twice" : buildStats.streakUnit}
               />
               <StatTile label="Best" value={`${buildStats.longestStreak}`} hint={buildStats.streakUnit} />
             </View>
@@ -197,19 +196,9 @@ export default function HabitDetailScreen() {
             <View className="flex-row mb-5">
               <View className="flex-1 mr-1.5">
                 <PrimaryButton
-                  label="Beat an urge"
+                  label="I feel an urge"
                   color={color}
-                  onPress={async () => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    await logEvent({
-                      habit_id: habit.id,
-                      kind: "urge",
-                      resisted: 1,
-                      intensity: null,
-                      trigger: null,
-                      note: null,
-                    });
-                  }}
+                  onPress={() => router.push({ pathname: "/urge/[id]", params: { id: String(habit.id) } })}
                 />
               </View>
               <View className="flex-1 ml-1.5">

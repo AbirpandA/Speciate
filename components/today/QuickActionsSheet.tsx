@@ -1,5 +1,6 @@
 import BottomSheetModal from "@/components/BottomSheetModal";
 import { DayHabit } from "@/hooks/useDayHabits";
+import { dailyTarget } from "@/utils/schedule";
 import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -18,6 +19,7 @@ export default function QuickActionsSheet({
   onReset,
   onEdit,
   onDetails,
+  onSetCount,
   onReorder,
 }: {
   habit: DayHabit | null;
@@ -26,6 +28,7 @@ export default function QuickActionsSheet({
   onReset: (h: DayHabit) => void;
   onEdit: (h: DayHabit) => void;
   onDetails: (h: DayHabit) => void;
+  onSetCount: (h: DayHabit) => void;
   onReorder: () => void;
 }) {
   if (!habit) return null;
@@ -35,6 +38,9 @@ export default function QuickActionsSheet({
   };
   const actions: Action[] = [
     { icon: "stats-chart-outline", label: "View details & history", onPress: run(() => onDetails(habit)) },
+    ...(dailyTarget(habit) > 1
+      ? [{ icon: "keypad-outline" as const, label: "Set count…", onPress: run(() => onSetCount(habit)) }]
+      : []),
     habit.entry_status === 2
       ? { icon: "arrow-undo-outline", label: "Undo skip", onPress: run(() => onReset(habit)) }
       : { icon: "play-skip-forward-outline", label: "Skip (won't break streak)", onPress: run(() => onSkip(habit)) },

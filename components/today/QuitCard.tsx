@@ -8,9 +8,11 @@ import { Pressable, Text, View } from "react-native";
 export default function QuitCard({
   habit,
   onPress,
+  onUrge,
 }: {
   habit: QuitHabit;
   onPress: (h: QuitHabit) => void;
+  onUrge: (h: QuitHabit) => void;
 }) {
   const { currentDays } = habit.stats;
   const next = nextMilestone(currentDays);
@@ -36,6 +38,18 @@ export default function QuitCard({
           {next ? `${next - currentDays} day${next - currentDays === 1 ? "" : "s"} to ${next}-day milestone` : "Legendary run"}
         </Text>
       </View>
+      <Pressable
+        onPress={() => onUrge(habit)}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={`I feel an urge for ${habit.name}`}
+        className="px-3 py-2 rounded-xl mr-3 active:opacity-70"
+        style={{ backgroundColor: color + "22" }}
+      >
+        <Text className="text-xs font-semibold" style={{ color }}>
+          Urge
+        </Text>
+      </Pressable>
       <View className="items-end">
         <Text className="text-2xl font-bold" style={{ color }}>
           {currentDays}

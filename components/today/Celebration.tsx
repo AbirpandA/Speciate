@@ -1,5 +1,6 @@
 import { theme } from "@/utils/theme";
-import React, { useEffect } from "react";
+import * as Haptics from "expo-haptics";
+import React, { useEffect, useEffectEvent } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -41,13 +42,26 @@ function Particle({ angle, distance, color, size }: (typeof PARTICLES)[number]) 
   );
 }
 
-/** Full-screen, non-blocking burst shown when every habit for today is done. */
-export default function Celebration({ visible, onDone }: { visible: boolean; onDone: () => void }) {
+export type CelebrationMessage = { emoji: string; title: string; subtitle?: string };
+
+/** Full-screen, non-blocking burst (day complete, quit milestones). */
+export default function Celebration({
+  message,
+  onDone,
+}: {
+  message: CelebrationMessage | null;
+  onDone: () => void;
+}) {
+  const visible = message !== null;
+  const hasSubtitle = !!message?.subtitle;
+  // Latest onDone without restarting the timer when the parent re-renders.
+  const finish = useEffectEvent(() => onDone());
   useEffect(() => {
     if (!visible) return;
-    const id = setTimeout(onDone, 1800);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const id = setTimeout(finish, hasSubtitle ? 2600 : 1800);
     return () => clearTimeout(id);
-  }, [visible, onDone]);
+  }, [visible, hasSubtitle]);
 
   if (!visible) return null;
   return (
@@ -61,9 +75,12 @@ export default function Celebration({ visible, onDone }: { visible: boolean; onD
         {PARTICLES.map((p, i) => (
           <Particle key={i} {...p} />
         ))}
-        <View className="bg-elevated px-6 py-4 rounded-3xl border border-line items-center">
-          <Text className="text-3xl">🌱</Text>
-          <Text className="text-white text-lg font-bold mt-1">Day complete</Text>
+        <View className="bg-elevated px-6 py-4 rounded-3xl border border-line items-center max-w-[280px]">
+          <Text className="text-3xl">{message?.emoji}</Text>
+          <Text className="text-white text-lg font-bold mt-1 text-center">{message?.title}</Text>
+          {message?.subtitle ? (
+            <Text className="text-fg-secondary text-sm mt-1 text-center">{message.subtitle}</Text>
+          ) : null}
         </View>
       </View>
     </Animated.View>

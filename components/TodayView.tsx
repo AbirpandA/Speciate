@@ -1,4 +1,6 @@
-import Celebration from "@/components/today/Celebration";
+import AtRiskBanner from "@/components/today/AtRiskBanner";
+import Celebration, { CelebrationMessage } from "@/components/today/Celebration";
+import CountSheet from "@/components/today/CountSheet";
 import DailyCard from "@/components/today/DailyCard";
 import HabitCard from "@/components/today/HabitCard";
 import QuickActionsSheet from "@/components/today/QuickActionsSheet";
@@ -7,11 +9,12 @@ import WeekStrip from "@/components/today/WeekStrip";
 import { DayHabit, useDayHabits, useWeekProgress } from "@/hooks/useDayHabits";
 import { QuitHabit, useQuitHabits } from "@/hooks/useQuitHabits";
 import { useSetHabitEntry } from "@/hooks/useToggle";
+import { useAuthStore } from "@/services/authStorage";
 import { motivationLine } from "@/utils/motivation";
+import { reachedMilestone } from "@/utils/quitStats";
 import { dailyTarget, TIME_OF_DAY_META, TIME_OF_DAY_ORDER } from "@/utils/schedule";
 import { theme } from "@/utils/theme";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { DateTime } from "luxon";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,7 +37,10 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   const today = DateTime.local().toFormat("yyyy-MM-dd");
   const [selected, setSelected] = useState(today);
   const [sheetHabit, setSheetHabit] = useState<DayHabit | null>(null);
-  const [celebrate, setCelebrate] = useState(false);
+  const [countHabit, setCountHabit] = useState<DayHabit | null>(null);
+  const [celebration, setCelebration] = useState<CelebrationMessage | null>(null);
+  const celebrated = useAuthStore((s) => s.celebrated);
+  const markCelebrated = useAuthStore((s) => s.markCelebrated);
 
   const { data: habits = [], isLoading } = useDayHabits(selected);
   const { data: week = [] } = useWeekProgress(selected);
@@ -51,11 +57,40 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     if (isToday && prevDone.current !== null && prevDone.current < total && done === total && total > 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setCelebrate(true);
+      setCelebration({ emoji: "🌱", title: "Day complete" });
     }
     prevDone.current = isToday ? done : null;
   }, [done, total, isToday, isLoading]);
+
+  // Quit milestones (1, 3, 7, 14, 30... days clean): celebrate each once per
+  // run. Derived during render; acknowledged (stored) when the burst ends.
+  const findPendingMilestone = () => {
+    for (const h of quitHabits) {
+      const m = reachedMilestone(h.stats.currentDays);
+      if (!m) continue;
+      const seen = celebrated?.[h.id];
+      if (seen && seen.since === h.stats.since && seen.days >= m) continue;
+      return {
+        habitId: h.id,
+        since: h.stats.since,
+        days: m,
+        message: {
+          emoji: m >= 30 ? "🏆" : "✨",
+          title: `${m} day${m === 1 ? "" : "s"} clean`,
+          subtitle: `${h.name}: you're proving you can.`,
+        } as CelebrationMessage,
+      };
+    }
+    return null;
+  };
+  const pendingMilestone = findPendingMilestone();
+  const shownCelebration = celebration ?? pendingMilestone?.message ?? null;
+  const onCelebrationDone = () => {
+    if (celebration) setCelebration(null);
+    else if (pendingMilestone) {
+      markCelebrated(pendingMilestone.habitId, pendingMilestone.since, pendingMilestone.days);
+    }
+  };
 
   const onCheck = useCallback(
     (h: DayHabit) => {
@@ -70,6 +105,21 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
       }
     },
     [selected, setEntry]
+  );
+
+  const setCount = useCallback(
+    (h: DayHabit, value: number) =>
+      setEntry({
+        habitId: h.id,
+        date: selected,
+        status: value >= dailyTarget(h) ? 1 : value > 0 ? 0 : null,
+        value: value > 0 ? value : null,
+      }),
+    [selected, setEntry]
+  );
+  const openCount = useCallback(
+    (h: DayHabit) => (dailyTarget(h) > 1 ? setCountHabit(h) : setSheetHabit(h)),
+    []
   );
 
   const openDetails = useCallback(
@@ -127,6 +177,12 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
               />
             )}
 
+            {isToday && (
+              <AtRiskBanner
+                habits={habits.filter((h) => h.at_risk && h.entry_status !== 1 && h.entry_status !== 2)}
+              />
+            )}
+
             {isLoading ? (
               <ActivityIndicator color={theme.accent} className="mt-6" />
             ) : (
@@ -143,9 +199,11 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
                     <HabitCard
                       key={h.id}
                       habit={h}
+                      showStreak={isToday}
                       onPress={openDetails}
                       onLongPress={setSheetHabit}
                       onCheck={onCheck}
+                      onCheckLongPress={openCount}
                     />
                   ))}
                 </View>
@@ -156,7 +214,12 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
               <View className="mt-3">
                 <SectionTitle icon="shield-checkmark-outline" label="Breaking" />
                 {quitHabits.map((h: QuitHabit) => (
-                  <QuitCard key={h.id} habit={h} onPress={openDetails} />
+                  <QuitCard
+                    key={h.id}
+                    habit={h}
+                    onPress={openDetails}
+                    onUrge={(q) => router.push({ pathname: "/urge/[id]", params: { id: String(q.id) } })}
+                  />
                 ))}
               </View>
             )}
@@ -171,10 +234,22 @@ export default function TodayView({ header }: { header: React.ReactNode }) {
         onReset={(h) => setEntry({ habitId: h.id, date: selected, status: null, value: null })}
         onEdit={(h) => router.push({ pathname: "/newHabit", params: { habitId: String(h.id) } })}
         onDetails={openDetails}
+        onSetCount={(h) => setCountHabit(h)}
         onReorder={() => router.push("/reorder")}
       />
 
-      <Celebration visible={celebrate} onDone={() => setCelebrate(false)} />
+      <CountSheet
+        key={countHabit ? `count-${countHabit.id}` : "count-none"}
+        habit={countHabit}
+        onClose={() => setCountHabit(null)}
+        onSave={setCount}
+      />
+
+      <Celebration
+        key={shownCelebration ? `${shownCelebration.title}|${shownCelebration.subtitle ?? ""}` : "none"}
+        message={shownCelebration}
+        onDone={onCelebrationDone}
+      />
     </View>
   );
 }

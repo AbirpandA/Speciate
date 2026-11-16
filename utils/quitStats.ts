@@ -47,6 +47,12 @@ export function calculateQuitStats(
   };
 }
 
+/** Highest milestone reached with `days` clean, or null if none yet. */
+export function reachedMilestone(days: number): number | null {
+  const reached = QUIT_MILESTONES.filter((m) => m <= days);
+  return reached.length ? reached[reached.length - 1] : null;
+}
+
 export function nextMilestone(days: number): number | null {
   return QUIT_MILESTONES.find((m) => m > days) ?? null;
 }

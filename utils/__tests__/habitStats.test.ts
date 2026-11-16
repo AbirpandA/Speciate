@@ -16,8 +16,20 @@ describe("calculateHabitStats (daily)", () => {
     expect(s.currentStreak).toBe(2);
   });
 
-  it("breaks on a missed past day", () => {
+  it("survives a single miss but flags it (never miss twice)", () => {
     const s = calculateHabitStats(daily, done("2024-01-06", "2024-01-07", "2024-01-09"), "2024-01-10");
+    expect(s.currentStreak).toBe(3); // Jan 8 missed once: paused, not reset
+    expect(s.atRisk).toBe(false); // Jan 9 done clears the risk
+  });
+
+  it("is at risk after missing yesterday", () => {
+    const s = calculateHabitStats(daily, done("2024-01-07", "2024-01-08"), "2024-01-10");
+    expect(s.currentStreak).toBe(2);
+    expect(s.atRisk).toBe(true);
+  });
+
+  it("resets after two misses in a row", () => {
+    const s = calculateHabitStats(daily, done("2024-01-05", "2024-01-06", "2024-01-09"), "2024-01-10");
     expect(s.currentStreak).toBe(1);
     expect(s.longestStreak).toBe(2);
   });

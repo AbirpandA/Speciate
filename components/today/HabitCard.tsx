@@ -15,12 +15,15 @@ import ProgressRing from "@/components/ui/ProgressRing";
 
 type Props = {
   habit: DayHabit;
+  /** streak info only makes sense for today */
+  showStreak?: boolean;
+  onCheckLongPress?: (h: DayHabit) => void;
   onPress: (h: DayHabit) => void;
   onLongPress: (h: DayHabit) => void;
   onCheck: (h: DayHabit) => void;
 };
 
-function HabitCard({ habit, onPress, onLongPress, onCheck }: Props) {
+function HabitCard({ habit, onPress, onLongPress, onCheck, onCheckLongPress, showStreak }: Props) {
   const color = habit.color || theme.accent;
   const target = dailyTarget(habit);
   const value = habit.entry_value ?? (habit.entry_status === 1 ? target : 0);
@@ -75,16 +78,30 @@ function HabitCard({ habit, onPress, onLongPress, onCheck }: Props) {
           >
             {habit.name}
           </Text>
-          {subtitle ? (
-            <Text className="text-muted text-sm mt-0.5" numberOfLines={1}>
-              {subtitle}
-            </Text>
-          ) : null}
+          <View className="flex-row items-center mt-0.5">
+            {showStreak && habit.at_risk && !done && !skipped ? (
+              <View className="px-2 py-0.5 rounded-full mr-1.5" style={{ backgroundColor: theme.quitSoft }}>
+                <Text className="text-xs font-semibold" style={{ color: theme.quit }}>
+                  Don&apos;t miss twice
+                </Text>
+              </View>
+            ) : showStreak && habit.streak > 1 ? (
+              <Text className="text-sm mr-1.5" style={{ color: theme.textSecondary }}>
+                🔥 {habit.streak}
+              </Text>
+            ) : null}
+            {subtitle ? (
+              <Text className="text-muted text-sm flex-1" numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
         </View>
       </Pressable>
 
       <Pressable
         onPress={handleCheck}
+        onLongPress={onCheckLongPress ? () => onCheckLongPress(habit) : undefined}
         hitSlop={10}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
@@ -124,6 +141,9 @@ export default React.memo(
     a.habit.entry_status === b.habit.entry_status &&
     a.habit.entry_value === b.habit.entry_value &&
     a.habit.week_done === b.habit.week_done &&
+    a.habit.streak === b.habit.streak &&
+    a.habit.at_risk === b.habit.at_risk &&
+    a.showStreak === b.showStreak &&
     a.habit.name === b.habit.name &&
     a.habit.icon === b.habit.icon &&
     a.habit.color === b.habit.color &&

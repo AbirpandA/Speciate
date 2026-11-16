@@ -7,8 +7,13 @@ export type Profile = {
   focusAreas: string[];
 };
 
+/** habitId -> highest milestone already celebrated for the run starting `since` */
+export type CelebratedMilestones = Record<string, { since: string; days: number }>;
+
 type UserState = {
   hasCompletedOnboarding: boolean;
+  celebrated: CelebratedMilestones;
+  markCelebrated: (habitId: number, since: string, days: number) => void;
   profile: Profile;
   setProfile: (profile: Partial<Profile>) => void;
   _hasHydrated: boolean;
@@ -22,6 +27,9 @@ export const useAuthStore = create(
     (set) => ({
       hasCompletedOnboarding: false,
       profile: { name: "", focusAreas: [] },
+      celebrated: {},
+      markCelebrated: (habitId, since, days) =>
+        set((state) => ({ celebrated: { ...state.celebrated, [habitId]: { since, days } } })),
       _hasHydrated: false,
       setProfile: (profile) =>
         set((state) => ({ profile: { ...state.profile, ...profile } })),

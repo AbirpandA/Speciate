@@ -5,7 +5,7 @@ import { theme } from "@/utils/theme";
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 
-const TRIGGERS = ["Stress", "Boredom", "Tired", "Social", "Habit cue", "Celebrating", "Lonely", "Other"];
+import { TRIGGERS } from "@/utils/triggers";
 
 /** Compassionate slip logging: record it, learn the trigger, keep going. */
 export default function SlipSheet({
