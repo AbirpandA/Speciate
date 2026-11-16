@@ -51,6 +51,7 @@ export default function SettingsScreen() {
   const queryClient = useQueryClient();
   const profile = useAuthStore((s) => s.profile);
   const setProfile = useAuthStore((s) => s.setProfile);
+  const resetOnboarding = useAuthStore((s) => s.resetOnboarding);
   const [name, setName] = useState(profile?.name ?? "");
   const { data: archived = [] } = useArchivedHabits();
   const { restoreHabit } = useHabits();
@@ -128,6 +129,25 @@ export default function SettingsScreen() {
           <Row icon="share-outline" label="Export backup" hint="JSON file" onPress={handleExport} />
           <View className="h-px bg-line" />
           <Row icon="download-outline" label="Import backup" hint="Replaces data" onPress={handleImport} danger />
+        </Card>
+
+        <SectionLabel>Setup</SectionLabel>
+        <Card className="py-1">
+          <Row
+            icon="sparkles-outline"
+            label="Replay onboarding"
+            hint="Adds starter habits"
+            onPress={() =>
+              Alert.alert(
+                "Replay onboarding?",
+                "You'll go through the welcome quiz again. Your existing habits stay; any starters you pick are added.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Replay", onPress: () => resetOnboarding() },
+                ]
+              )
+            }
+          />
         </Card>
 
         <View className="items-center mt-10">
